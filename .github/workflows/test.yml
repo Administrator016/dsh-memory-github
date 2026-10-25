@@ -1,0 +1,40 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: node ${{ matrix.node }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [20, 22]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Show git version
+        run: git --version
+
+      # 不需要 npm install：插件零运行时依赖，只用 node 内置模块
+      - name: Smoke test (tools / local backend)
+        run: node test/smoke.mjs
+
+      - name: Git backend test (bare repo as remote)
+        run: node test/git-backend.mjs
+        env:
+          GIT_BIN: git

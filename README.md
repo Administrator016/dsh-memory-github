@@ -1,5 +1,8 @@
 # dsh-memory-github
 
+[![test](https://github.com/Administrator016/dsh-memory-github/actions/workflows/test.yml/badge.svg)](https://github.com/Administrator016/dsh-memory-github/actions/workflows/test.yml)
+[![license](https://img.shields.io/github/license/Administrator016/dsh-memory-github)](LICENSE)
+
 给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 用的**跨会话记忆插件**。
 
 默认把记忆存在本地目录；想要换机器也能接着用，就把它接成一个 **GitHub 私有仓库**——
