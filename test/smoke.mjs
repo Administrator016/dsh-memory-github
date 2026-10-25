@@ -39,6 +39,14 @@ for (const n of ['memory_write', 'memory_core', 'memory_search', 'memory_read', 
   check(ctx._tools.has(n), `有工具 ${n}`);
 }
 
+// DSH 的硬性要求：output 必须是 { schema, render } 对象（写错会导致整个插件挂载失败）
+for (const [n, def] of ctx._tools) {
+  const ok = def.output && typeof def.output === 'object'
+    && def.output.schema && typeof def.output.render === 'function'
+    && typeof def.description === 'string' && def.description.length > 0;
+  check(ok, `${n} 的 output/description 形状正确`);
+}
+
 const write = await ctx._tools.get('memory_write').execute({
   title: 'Windows 端开机自启',
   content: '用启动文件夹的 VBS 拉起 PowerShell，只启动不隐藏。',
