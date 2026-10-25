@@ -1,6 +1,6 @@
 {
   "name": "dsh-memory-github",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Cross-session memory for DeepSeek Harness. Local memory store by default, optional GitHub-backed sync (git), with primary/child roles for multi-device setups.",
   "type": "module",
   "main": "lib/index.js",

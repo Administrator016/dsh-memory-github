@@ -129,7 +129,7 @@ check(list2.includes('共 2 条'), 'index.json 丢失后能从 notes/ 重建');
 
 // ---------- 4. 角色与提醒 ----------
 console.log('\n4) 角色与提醒');
-const emit = (c, type) => { for (const fn of c._handlers.filter((h) => h.event === 'session/event')) fn.fn({}, { type }); };
+const emit = (c, type, data = {}) => { for (const fn of c._handlers.filter((h) => h.event === 'session/event')) fn.fn({}, { type, data }); };
 
 // 整理端（primary）：7 条消息不动记忆 → 提醒写 memory_write
 const ctxP = makeCtx();
@@ -218,6 +218,37 @@ const noteC = await ctx7._tools.get('memory_write').execute({
   content: '这台机器的 Node 是 26.4，运行时在 dsh-runtimes 里，npm 11.16。',
 });
 check(!noteC.includes('高度相似'), 'dedupeHint=false 时不提示');
+
+// ---------- 8. 自动召回 ----------
+console.log('\n8) 自动召回');
+const ctxR = makeCtx();
+mod.apply(ctxR, { backend: 'local', dir, autoRecall: true });
+await ctxR._tools.get('memory_write').execute({
+  title: '显卡驱动版本',
+  tags: ['gpu'],
+  content: 'NVIDIA 驱动 551.23，重装前先 DDU 清干净。',
+});
+await ctxR._tools.get('memory_write').execute({
+  title: 'Python 环境',
+  tags: ['python'],
+  content: '这台机器没有 python3，脚本一律用 node。',
+});
+emit(ctxR, 'user/message', { content: [{ type: 'text', text: '显卡驱动要不要更新一下？' }] });
+const recallText = ctxR._sections[0].text();
+check(recallText.includes('自动召回'), 'autoRecall 触发了注入');
+check(recallText.includes('显卡驱动版本'), '召回命中了相关归档');
+check(!recallText.includes('Python 环境'), '不相关归档没有被召回');
+
+const ctxR2 = makeCtx();
+mod.apply(ctxR2, { backend: 'local', dir, autoRecall: false });
+emit(ctxR2, 'user/message', { content: '显卡驱动要不要更新一下？' });
+check(!ctxR2._sections[0].text().includes('自动召回'), 'autoRecall=false 关闭注入');
+
+// 没有相关记忆时不该硬塞
+const ctxR3 = makeCtx();
+mod.apply(ctxR3, { backend: 'local', dir, autoRecall: true });
+emit(ctxR3, 'user/message', { content: '今天天气怎么样' });
+check(!ctxR3._sections[0].text().includes('自动召回'), '无相关记忆时不注入');
 
 
 

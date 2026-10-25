@@ -3,22 +3,39 @@
 [![test](https://github.com/Administrator016/dsh-memory-github/actions/workflows/test.yml/badge.svg)](https://github.com/Administrator016/dsh-memory-github/actions/workflows/test.yml)
 [![license](https://img.shields.io/github/license/Administrator016/dsh-memory-github)](LICENSE)
 
-给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 用的**跨会话记忆插件**。
+给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 用的**多端共享记忆插件**。
 
-默认把记忆存在本地目录；想要换机器也能接着用，就把它接成一个 **GitHub 私有仓库**——
-插件会在每次写入后自动 commit + push，启动时自动 pull。
+生态里同类插件有上百个（`dsh-prime-memory`、`meow-memory`、`dsh-mnemonic`…），绝大多数是
+**本地库**：SQLite、向量索引、面板 UI，功能很强，但**只在那一台机器上**。
+这个插件的取舍相反——不引入数据库、不调 embedding，只用一个目录 + 一个 git 仓库，
+把「手机 / 电脑 / 移动硬盘」这些设备连成**同一份记忆**：
+
+- 一台机当**整理端**（`role: primary`）负责写和推
+- 其余机器当**子端**（`role: child`）只读，想留话就写 `inbox/`，整理端处理完归档
+- 换机器：`git clone` 或拷贝目录即恢复；连不联网都能用
 
 > 记忆分两层：**核心记忆**（`MEMORY.md`，每轮注入系统提示，硬上限可配）和**归档记忆**
-> （`notes/*.md` + `index.json`，按关键词检索）。模型自己决定什么时候写、写什么。
+> （`notes/*.md` + `index.json`，按关键词检索 + **自动召回**）。模型自己决定什么时候写、写什么。
 
 ## 特性
 
 - 🧠 **两段式记忆**：核心记忆常驻注入，归档记忆按需检索（`memory_search` / `memory_read`）
-- 💾 **默认本地**：一个目录就是记忆库（Markdown + JSON，随便备份、随便看）
-- ☁️ **可选 GitHub**：同一个目录套上 git，写入自动推送、启动自动拉取
-- 🔒 **只读模式**：`readOnly: true` 只注册读工具，适合"手机写入、电脑只读"这类多设备分工
+- 🎯 **自动召回**：每轮按你的消息自动挑几条相关归档注入（无需模型想起来去 search）
+- 🌐 **多端共享**：`primary` / `child` 角色分工，GitHub 做同步总线
+- 💾 **零依赖**：一个目录就是记忆库（Markdown + JSON），可读、可审计、可 `git diff`
+- ☁️ **可选 GitHub**：写入自动 commit + push，启动自动 pull，冲突自动 `rebase --abort`
+- 🔒 **只读模式**：`readOnly: true` 只注册读工具，适合"手机写入、电脑只读"这类分工
 - 🩹 **索引自愈**：`index.json` 丢了会从 `notes/` 重建，不会因为一个文件损坏就丢记忆
-- 🧪 **自带冒烟测试**：`node test/smoke.mjs`，30 条断言不依赖 DSH 运行时
+- 🧪 **自带测试**：`node test/smoke.mjs`（68 条断言）+ `test/git-backend.mjs`（12 条），不依赖 DSH 运行时
+
+## 什么时候适合用它
+
+✅ 你有多台设备（手机 + 电脑），想让它们记住同一批事
+✅ 你想知道 AI 到底记住了什么（纯 Markdown，直接打开看）
+✅ 记忆要能带走、能版本管理、能自己审查
+
+❌ 你要的是单机最强检索（那去用带 BM25 / 向量库的插件）
+❌ 你要的是聊天框里的记忆面板 UI（本项目没有客户端插件）
 
 ## 两种后端
 
@@ -28,6 +45,7 @@
 | 换机 | 手动拷贝目录 | `git clone` 即恢复 |
 | 多设备 | 各存各的 | 共享一份，自动 pull / push |
 | 依赖 | 无 | `git` 可执行文件 |
+
 
 ## 安装
 
@@ -81,6 +99,11 @@ dsh plugin --profile desktop add link:/path/to/dsh-memory-github
     pushOnTurnEnd: false      # 每轮结束若有未提交改动就推送
     remindEvery: 6            # 每 N 条用户消息没动记忆 → 注入提醒（0=关）
     staleMinutes: 0           # 距上次同步超过 N 分钟 → 提示先 pull（0=关）
+    autoRecall: true          # 按当前用户消息自动召回相关归档（默认开）
+    autoRecallLimit: 5        # 自动召回最多注入几条
+    autoRecallMinScore: 4     # 自动召回打分门槛，调高更保守
+    recentLimit: 0            # 额外注入最近 N 条归档标题（0=关）
+    dedupeHint: true          # 写入时提示与已有归档高度相似
     commitMessage: 'memory: {tool}'   # {tool} 会替换成触发的工具名
     gitBin: git               # git 可执行文件（不在 PATH 就写绝对路径）
     authorName: dsh-memory
