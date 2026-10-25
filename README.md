@@ -37,18 +37,29 @@
 dsh plugin --profile desktop add dsh-memory-github
 ```
 
-**方式二：本地目录**
+**方式二：直接从 GitHub 装**
+
+```sh
+# pnpm 语法（dsh plugin 内部就是 pnpm）
+dsh plugin --profile desktop add github:Administrator016/dsh-memory-github
+```
+
+**方式三：本地目录**
 
 ```sh
 dsh plugin --profile desktop add link:/path/to/dsh-memory-github
 ```
 
-**方式三：手动接线**
+**方式四：手动接线**
 
 把包放进 `<profile>/node_modules/`，然后在 `<profile>/package.json` 的
 `dsh.profile.bundles` 里加上 `"dsh-memory-github"`。
 
 装完重启 DSH 生效。
+
+> ⚠️ **和 `dsh-core-memory` 只能二选一。** 两者注册的工具同名
+> （`memory_write` / `memory_core` / `memory_search` / `memory_read` / `memory_list`），
+> 同时装会因重复注册而挂掉一个。换装时先把旧的从 `dsh.profile.bundles` 里去掉。
 
 ## 配置
 

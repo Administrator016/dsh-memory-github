@@ -1,7 +1,7 @@
 {
   "name": "dsh-memory-github",
-  "version": "0.1.0",
-  "description": "Cross-session memory for DeepSeek Harness. Local memory store by default, optional GitHub-backed sync (git) for portability.",
+  "version": "0.2.0",
+  "description": "Cross-session memory for DeepSeek Harness. Local memory store by default, optional GitHub-backed sync (git), with primary/child roles for multi-device setups.",
   "type": "module",
   "main": "lib/index.js",
   "exports": {
@@ -13,28 +13,36 @@
     "lib",
     "cordis.patch.yml",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "keywords": [
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
+    "deepseek",
+    "cordis",
     "memory",
     "cross-session",
     "git",
-    "github"
+    "github",
+    "sync"
   ],
   "license": "MIT",
   "author": "",
+  "homepage": "https://github.com/Administrator016/dsh-memory-github#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Administrator016/dsh-memory-github.git"
+    "url": "git+https://github.com/Administrator016/dsh-memory-github.git"
   },
   "bugs": {
     "url": "https://github.com/Administrator016/dsh-memory-github/issues"
   },
   "engines": {
     "dsh": ">=0.2.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "dsh": {
     "bundle": {
