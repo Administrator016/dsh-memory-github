@@ -1,5 +1,7 @@
 # dsh-memory-github
 
+**中文** | [English](README.en.md)
+
 [![test](https://github.com/Administrator016/dsh-memory-github/actions/workflows/test.yml/badge.svg)](https://github.com/Administrator016/dsh-memory-github/actions/workflows/test.yml)
 [![license](https://img.shields.io/github/license/Administrator016/dsh-memory-github)](LICENSE)
 
