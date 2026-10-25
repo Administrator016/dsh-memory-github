@@ -19,11 +19,14 @@ const check = (cond, name, extra = '') => {
 function makeCtx() {
   const tools = new Map();
   const sections = [];
+  const handlers = [];
   return {
     tools: { register(def) { tools.set(def.name, def); } },
     systemPrompt: { section(s) { sections.push(s); } },
+    on(event, fn) { handlers.push({ event, fn }); },
     _tools: tools,
     _sections: sections,
+    _handlers: handlers,
   };
 }
 
@@ -122,6 +125,37 @@ const ctx2 = makeCtx();
 mod.apply(ctx2, { backend: 'local', dir });
 const list2 = await ctx2._tools.get('memory_list').execute({ limit: 10 });
 check(list2.includes('共 2 条'), 'index.json 丢失后能从 notes/ 重建');
+
+// ---------- 4. 角色与提醒 ----------
+console.log('\n4) 角色与提醒');
+const emit = (c, type) => { for (const fn of c._handlers.filter((h) => h.event === 'session/event')) fn.fn({}, { type }); };
+
+// 整理端（primary）：7 条消息不动记忆 → 提醒写 memory_write
+const ctxP = makeCtx();
+mod.apply(ctxP, { backend: 'local', dir, role: 'primary', remindEvery: 6 });
+const secP = ctxP._sections[0];
+check(!secP.text().includes('记忆提醒'), '未到阈值不提醒');
+for (let i = 0; i < 6; i++) emit(ctxP, 'user/message');
+check(secP.text().includes('记忆提醒') && secP.text().includes('memory_write'), '整理端到阈值提醒用 memory_write');
+
+// 写入记忆后计数归零
+await ctxP._tools.get('memory_write').execute({ title: '写点东西', content: '让 mtime 变新。' });
+check(!secP.text().includes('记忆提醒'), '写记忆后提醒消失（自动归零）');
+
+// 子端（child）：只读 + 提醒写 inbox
+const ctxC = makeCtx();
+mod.apply(ctxC, { backend: 'local', dir, role: 'child', remindEvery: 3 });
+check(!ctxC._tools.has('memory_write'), 'child 角色自动只读（无 memory_write）');
+for (let i = 0; i < 3; i++) emit(ctxC, 'user/message');
+const childText = ctxC._sections[0].text();
+check(childText.includes('子端') && childText.includes('inbox'), 'child 提醒写 inbox');
+
+// 关掉提醒
+const ctxOff = makeCtx();
+mod.apply(ctxOff, { backend: 'local', dir, role: 'primary', remindEvery: 0 });
+for (let i = 0; i < 20; i++) emit(ctxOff, 'user/message');
+check(!ctxOff._sections[0].text().includes('记忆提醒'), 'remindEvery=0 关闭提醒');
+
 
 rmSync(dir, { recursive: true, force: true });
 console.log(`\n结果: ${pass} 通过, ${fail} 失败`);

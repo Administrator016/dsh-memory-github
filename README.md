@@ -60,17 +60,43 @@ dsh plugin --profile desktop add link:/path/to/dsh-memory-github
   config:
     backend: local            # local | github
     dir: ''                   # 空 = $DSH_HOME/memory
-    readOnly: false           # true = 只注册读工具
+    role: primary             # primary（整理端，可写）| child（子端，只读 + 写 inbox）
+    readOnly: false           # true 强制只读；role=child 时自动为 true
     coreLimit: 3000           # 核心记忆注入上限（字符）
     remote: ''                # github 后端：git@github.com:you/dsh-memory.git
     branch: main
     autoPull: true            # 启动时 pull
     autoPush: true            # 写入后 commit + push
+    pushOnTurnEnd: false      # 每轮结束若有未提交改动就推送
+    remindEvery: 6            # 每 N 条用户消息没动记忆 → 注入提醒（0=关）
+    staleMinutes: 0           # 距上次同步超过 N 分钟 → 提示先 pull（0=关）
     commitMessage: 'memory: {tool}'   # {tool} 会替换成触发的工具名
     gitBin: git               # git 可执行文件（不在 PATH 就写绝对路径）
     authorName: dsh-memory
     authorEmail: dsh-memory@localhost
 ```
+
+## 多端分工与同步提醒
+
+一台机器当"整理端"，其余当"子端"：
+
+| | `role: primary`（整理端） | `role: child`（子端） |
+|---|---|---|
+| 写核心 / 归档 | ✅ `memory_write` / `memory_core` | ❌ 不注册写工具 |
+| 写 `inbox/` | 可选 | ✅ 推荐做法 |
+| 自动推送 | `autoPush` / `pushOnTurnEnd` | ❌（`memory_sync push` 也会被拒） |
+| 启动拉取 | `autoPull` | `autoPull`（必须开，否则看不到别人的更新） |
+| 提醒文案 | 用 `memory_write` 存、`memory_sync push` 推 | 写 `inbox/` 再 `git pull/commit/push` |
+
+提醒怎么触发：
+
+- **`remindEvery`（默认 6）**：连续 N 条用户消息没动过记忆库（核心/notes/index/inbox 的 mtime 都没变），
+  就在系统提示里追一段提醒；一旦写了记忆，计数自动归零。
+- **`staleMinutes`（默认关）**：距上次成功 pull/push 超过 N 分钟，提示先 `memory_sync pull`
+  再动手，避免两台设备同时改同一份记忆。
+- **`pushOnTurnEnd`**：整理端可以打开，每轮结束自动把改动推上去（相当于"自动存盘"）。
+
+`local` 后端下这些提醒同样有效（只是不涉及 git 同步）。
 
 ## 工具
 

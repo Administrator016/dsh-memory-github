@@ -1,24 +1,30 @@
 # dsh-memory-github profile patch layer
 #
-# 默认值：本地记忆库（$DSH_HOME/memory），不开 git。
-# 要用 GitHub 后端，把下面的 config 改成注释里那份即可。
+# 默认值：本地记忆库（$DSH_HOME/memory），不开 git，行为等同"整理端"。
+# 要用 GitHub 后端 / 子端，把下面的 config 改成注释里那份即可。
 - insert:
     - id: dsh-memory-github
       name: 'dsh-memory-github'
       config:
         backend: local            # local | github
         dir: ''                   # 空 = $DSH_HOME/memory
-        readOnly: false           # true = 只注册读工具
+        role: primary             # primary（整理端）| child（子端，只读 + 写 inbox）
+        readOnly: false           # true 强制只读；role=child 时自动为 true
         coreLimit: 3000           # 核心记忆注入上限（字符）
         remote: ''                # github 后端：git@github.com:you/dsh-memory.git
         branch: main
         autoPull: true            # 启动时拉取
         autoPush: true            # 写入后提交推送
+        pushOnTurnEnd: false      # 每轮结束若有未提交改动就推送
+        remindEvery: 6            # 每 N 条用户消息没动记忆 → 提醒（0=关）
+        staleMinutes: 0           # 距上次同步超过 N 分钟 → 提示先 pull（0=关）
         commitMessage: 'memory: {tool}'
         gitBin: git
         authorName: dsh-memory
         authorEmail: dsh-memory@localhost
-        # ---- GitHub 后端示例 ----
+        # ---- 子端（只读，靠 inbox 交流）示例 ----
         # backend: github
         # remote: git@github.com:you/dsh-memory.git
-        # autoPush: true
+        # role: child
+        # autoPull: true
+        # staleMinutes: 30
