@@ -1,0 +1,24 @@
+# dsh-memory-github profile patch layer
+#
+# 默认值：本地记忆库（$DSH_HOME/memory），不开 git。
+# 要用 GitHub 后端，把下面的 config 改成注释里那份即可。
+- insert:
+    - id: dsh-memory-github
+      name: 'dsh-memory-github'
+      config:
+        backend: local            # local | github
+        dir: ''                   # 空 = $DSH_HOME/memory
+        readOnly: false           # true = 只注册读工具
+        coreLimit: 3000           # 核心记忆注入上限（字符）
+        remote: ''                # github 后端：git@github.com:you/dsh-memory.git
+        branch: main
+        autoPull: true            # 启动时拉取
+        autoPush: true            # 写入后提交推送
+        commitMessage: 'memory: {tool}'
+        gitBin: git
+        authorName: dsh-memory
+        authorEmail: dsh-memory@localhost
+        # ---- GitHub 后端示例 ----
+        # backend: github
+        # remote: git@github.com:you/dsh-memory.git
+        # autoPush: true
