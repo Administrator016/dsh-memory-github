@@ -113,12 +113,23 @@ dsh plugin --profile desktop add link:/path/to/dsh-memory-github
 
 | 工具 | 作用 |
 |---|---|
-| `memory_write` | 保存一条归档记忆（title / content / tags），立刻进索引 |
+| `memory_write` | 保存一条归档记忆（title / content / tags），立刻进索引；写入前会做**相似度查重** |
+| `memory_update` | 改已有归档的 title / tags / content，刷新 `updated` |
+| `memory_forget` | `archive`（移到 `notes/archive/` 可回滚）或 `delete` |
 | `memory_core` | 编辑 `MEMORY.md`：`append` / `replace` / `remove` 某个分节 |
 | `memory_search` | 按关键词检索（标题权重 6、标签 3、正文按出现次数），返回摘要 |
 | `memory_read` | 按 id 读全文，支持唯一前缀 |
 | `memory_list` | 列出归档（新→旧），可按标签过滤 |
+| `memory_stats` | 条数、总大小、标签分布、核心记忆长度、后端与最近更新 |
+| `memory_history` | 提交历史（GitHub 后端），追溯某条记忆是何时被哪个工具写进来的 |
 | `memory_sync` | `status` / `pull` / `push`，GitHub 后端专用 |
+
+**查重**：`memory_write` 会把新内容与已有归档做词袋相似度比较（Jaccard ≥ 45% 视为高度相似），
+命中时在返回里提示「考虑改用 `memory_update`」。关掉：`dedupeHint: false`。
+
+**最近归档注入**：`recentLimit: 5` 会在每轮系统提示末尾附上最近 5 条归档的 id/标题/标签，
+让模型"看得见目录"，召回率比纯靠 `memory_search` 高。默认关闭（`0`）。
+
 
 模型侧的使用约定由插件注入的系统提示承载：核心记忆里写"永远要记住的"，
 归档里写"以后可能用得上、但不用每轮都占上下文的"。

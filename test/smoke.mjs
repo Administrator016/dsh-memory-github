@@ -37,8 +37,9 @@ console.log(`临时记忆库: ${dir}\n`);
 console.log('1) local 后端');
 const ctx = makeCtx();
 mod.apply(ctx, { backend: 'local', dir, coreLimit: 3000 });
-check(ctx._tools.size === 6, `注册了 6 个工具（实际 ${ctx._tools.size}）`);
-for (const n of ['memory_write', 'memory_core', 'memory_search', 'memory_read', 'memory_list', 'memory_sync']) {
+check(ctx._tools.size === 10, `注册了 10 个工具（实际 ${ctx._tools.size}）`);
+for (const n of ['memory_write', 'memory_core', 'memory_search', 'memory_read', 'memory_list',
+  'memory_update', 'memory_forget', 'memory_stats', 'memory_history', 'memory_sync']) {
   check(ctx._tools.has(n), `有工具 ${n}`);
 }
 
@@ -155,6 +156,69 @@ const ctxOff = makeCtx();
 mod.apply(ctxOff, { backend: 'local', dir, role: 'primary', remindEvery: 0 });
 for (let i = 0; i < 20; i++) emit(ctxOff, 'user/message');
 check(!ctxOff._sections[0].text().includes('记忆提醒'), 'remindEvery=0 关闭提醒');
+
+// ---------- 5. 新工具：update / forget / stats / history ----------
+console.log('\n5) 新工具');
+const ctx3 = makeCtx();
+mod.apply(ctx3, { backend: 'local', dir });
+const T3 = (n) => ctx3._tools.get(n);
+
+const before3 = await T3('memory_list').execute({ limit: 50 });
+check(before3.includes('共 3 条'), '起始 3 条归档');
+
+const upd = await T3('memory_update').execute({ id: '写点东西', title: '改过的标题', tags: ['t1', 't2'] });
+check(upd.includes('已更新') && upd.includes('改过的标题'), 'memory_update 改标题成功');
+const afterUpd = await T3('memory_list').execute({ limit: 50 });
+check(afterUpd.includes('改过的标题') && afterUpd.includes('#t1'), 'update 后列表可见新标题与标签');
+
+const updId = /\[([^\]]+)\]/.exec(upd)?.[1] ?? '';
+const byPrefix = await T3('memory_update').execute({ id: updId.slice(0, updId.length - 2), content: '前缀匹配改正文。' });
+check(byPrefix.includes('已更新'), 'memory_update 支持唯一前缀（按 id 前缀）');
+
+const arch = await T3('memory_forget').execute({ id: '改过的标题', mode: 'archive' });
+check(arch.includes('已归档'), 'memory_forget archive 成功');
+check(existsSync(join(dir, 'notes', 'archive')), 'archive 目录已创建');
+
+const del = await T3('memory_forget').execute({ id: '记忆库同步分工', mode: 'delete' });
+check(del.includes('已删除'), 'memory_forget delete 成功');
+
+const stats = await T3('memory_stats').execute({});
+check(stats.includes('归档：') && stats.includes('标签：'), 'memory_stats 返回概况与标签分布');
+
+const hist = await T3('memory_history').execute({});
+check(hist.includes('local 后端'), 'local 后端下 memory_history 提示无历史');
+
+// ---------- 6. recentLimit 注入 ----------
+console.log('\n6) 最近归档注入');
+const ctx4 = makeCtx();
+mod.apply(ctx4, { backend: 'local', dir, recentLimit: 3 });
+check(ctx4._sections[0].text().includes('最近归档'), 'recentLimit 注入了最近归档段');
+const ctx5 = makeCtx();
+mod.apply(ctx5, { backend: 'local', dir, recentLimit: 0 });
+check(!ctx5._sections[0].text().includes('最近归档'), 'recentLimit=0 不注入');
+
+// ---------- 7. 查重提示 ----------
+console.log('\n7) 查重提示');
+const ctx6 = makeCtx();
+mod.apply(ctx6, { backend: 'local', dir, dedupeHint: true });
+const noteA = await ctx6._tools.get('memory_write').execute({
+  title: 'Node 环境版本',
+  content: '这台机器的 Node 是 26.4，运行时在 dsh-runtimes 里，npm 11.16。',
+});
+const noteB = await ctx6._tools.get('memory_write').execute({
+  title: 'Node 环境版本（重复）',
+  content: '这台机器的 Node 是 26.4，运行时在 dsh-runtimes 里，npm 11.16。',
+});
+check(noteB.includes('高度相似'), '相似写入会被提示去重');
+
+const ctx7 = makeCtx();
+mod.apply(ctx7, { backend: 'local', dir, dedupeHint: false });
+const noteC = await ctx7._tools.get('memory_write').execute({
+  title: 'Node 环境版本（再重复）',
+  content: '这台机器的 Node 是 26.4，运行时在 dsh-runtimes 里，npm 11.16。',
+});
+check(!noteC.includes('高度相似'), 'dedupeHint=false 时不提示');
+
 
 
 rmSync(dir, { recursive: true, force: true });

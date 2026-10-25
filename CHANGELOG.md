@@ -1,5 +1,31 @@
 # 更新日志
 
+## 0.3.0 — 2026-10-25
+
+参考同类插件（dsh-prime-memory、meow-memory、@try-works/dsh-memory、@modusensus/dsh-mneme 等
+百余个生态作品）后补齐的「记忆全生命周期」能力。仍然零依赖、纯 Markdown + git。
+
+### 新增
+
+- **`memory_update`**：改已有归档的 title / tags / content，刷新 `updated` 并自动提交推送。
+- **`memory_forget`**：`archive`（移到 `notes/archive/`，可回滚）或 `delete`（直接删文件）。
+- **`memory_stats`**：条数、总大小、标签分布、核心记忆长度、后端信息、最近更新时间。
+- **`memory_history`**：GitHub 后端的提交历史，可追溯某条记忆何时被哪个工具写进来。
+- **`recentLimit`**：每轮在系统提示末尾注入最近 N 条归档的 id / 标题 / 标签（默认关）。
+  竞品普遍靠「自动召回」提升命中率；这个是最便宜的近似做法，不引入数据库。
+- **查重提示**：`memory_write` 写入前与已有归档做词袋 Jaccard 比较（≥45%），
+  命中就在返回里提示「考虑用 `memory_update`」，减少同一件事写两遍。可用 `dedupeHint: false` 关闭。
+
+### 改进
+
+- `findNote` 现在支持三种定位方式：id 精确 / id 前缀 / **标题** / id 含该 slug，
+  并且多处命中时明确列出候选，不再直接报"找不到"。
+- 只读模式（`role: child`）下新增的两个读工具 `memory_stats`、`memory_history` 也可用。
+
+### 测试
+
+- 冒烟测试从 42 条扩到 **63 条**（覆盖 update / forget / stats / history / recentLimit / 查重）。
+
 ## 0.2.0 — 2026-10-25
 
 ### 新增
