@@ -232,6 +232,23 @@ updated: 2026-10-25T02:49:12.000Z
 - 不要把 PAT 写进 `cordis.patch.yml`、更不要提交进仓库；用 SSH key 或本地 remote。
 - `readOnly: true` 下不会注册任何写工具，适合给不信任的机器用。
 
+## 发布
+
+推 tag 即发布，**不需要长期 token**（走 OIDC Trusted Publishing，[npm 文档](https://docs.npmjs.com/trusted-publishers/)）：
+
+```sh
+# 1. 改 package.json 版本 + CHANGELOG
+# 2. 提交后打 tag（tag 必须与版本号一致，workflow 会校验）
+git tag v0.4.2 && git push origin v0.4.2
+```
+
+一次性准备（包的所有者做一次）：
+1. npm 包页面 → **Settings → Trusted Publishing** → 绑定：仓库 `Administrator016/dsh-memory-github`、workflow `publish.yml`、环境留空
+2. 之后每次推 tag，GitHub Actions 用 OIDC 换短期凭据发布，并附 **provenance** 证明
+
+> 没有绑定 Trusted Publishing 时，workflow 会在发布步骤失败（没有可用凭据）——这是预期行为，不会误发。
+> 备用方案：仓库 Secret 放 `NPM_TOKEN`，workflow 里用 `NODE_AUTH_TOKEN` 环境变量（但长期 token 泄露风险更高，不推荐）。
+
 ## 开发
 
 ```sh
