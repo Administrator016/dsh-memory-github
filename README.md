@@ -94,6 +94,7 @@ dsh plugin --profile desktop add link:/path/to/dsh-memory-github
     role: primary             # primary（整理端，可写）| child（子端，只读 + 写 inbox）
     readOnly: false           # true 强制只读；role=child 时自动为 true
     coreLimit: 3000           # 核心记忆注入上限（字符）
+    coreExclude: null         # drop lines/sections containing these markers; null = child auto-uses ['【手机】']
     remote: ''                # github 后端：git@github.com:you/dsh-memory.git
     branch: main
     autoPull: true            # 启动时 pull
@@ -111,6 +112,21 @@ dsh plugin --profile desktop add link:/path/to/dsh-memory-github
     authorName: dsh-memory
     authorEmail: dsh-memory@localhost
 ```
+
+## 按端过滤核心记忆
+
+两端注入的是同一份 `MEMORY.md`，但有些内容只对一端有意义（手机专属的震动命令、仅电脑适用的操作守则）。
+给这些内容打标记，注入时按端丢弃：
+
+```markdown
+## 环境（手机）【手机】
+- 只给手机端看的条目
+```
+
+- **默认行为**：子端（`role: child`）自动过滤 `【手机】`，主端不过滤 —— 零配置
+- **自定义**：`coreExclude: ['【手机】', '【内网】']`；设 `[]` 表示不过滤
+- 某个 `##` 节被过滤到只剩标题时，**标题一起丢掉**，不会留下空壳
+- 过滤在 `coreLimit` 截断**之前**，子端能用满额度
 
 ## 多端分工与同步提醒
 

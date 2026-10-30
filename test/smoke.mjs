@@ -2,7 +2,7 @@
  * 冒烟测试：用一个假 ctx 跑通全部工具，不依赖 DSH 运行时。
  *   node test/smoke.mjs
  */
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { pathToFileURL } from 'node:url';
@@ -250,6 +250,48 @@ mod.apply(ctxR3, { backend: 'local', dir, autoRecall: true });
 emit(ctxR3, 'user/message', { content: '今天天气怎么样' });
 check(!ctxR3._sections[0].text().includes('自动召回'), '无相关记忆时不注入');
 
+// ---------- 按端过滤核心记忆（coreExclude） ----------
+console.log('\n) coreExclude 分端注入');
+const dirE = mkdtempSync(join(tmpdir(), 'dsh-memory-exclude-'));
+writeFileSync(join(dirE, 'MEMORY.md'), [
+  '# 测试核心',
+  '',
+  '## 通用',
+  '- 大家都看得到',
+  '',
+  '## 环境（手机）【手机】',
+  '- 只给手机看',
+  '',
+  '## 电脑端守则【电脑】',
+  '- 只给电脑看',
+  '',
+  '## 空节【手机】',
+].join('\n'));
+
+// 子端：默认丢掉【手机】行/节
+const ctxEx1 = makeCtx();
+mod.apply(ctxEx1, { backend: 'local', dir: dirE, role: 'child' });
+const exChild = ctxEx1._sections[0].text();
+check(exChild.includes('大家都看得到'), '子端保留通用内容');
+check(!exChild.includes('只给手机看'), '子端过滤掉【手机】行');
+check(!exChild.includes('环境（手机）'), '整节被过滤空时标题一起丢弃');
+check(exChild.includes('只给电脑看'), '子端保留【电脑】内容');
+
+// 主端：不过滤
+const ctxEx2 = makeCtx();
+mod.apply(ctxEx2, { backend: 'local', dir: dirE, role: 'primary' });
+const exPrimary = ctxEx2._sections[0].text();
+check(exPrimary.includes('只给手机看') && exPrimary.includes('只给电脑看'), '主端不丢内容');
+
+// 显式配置：主端也过滤【电脑】
+const ctxEx3 = makeCtx();
+mod.apply(ctxEx3, { backend: 'local', dir: dirE, role: 'primary', coreExclude: ['【电脑】'] });
+const exP2 = ctxEx3._sections[0].text();
+check(!exP2.includes('只给电脑看') && exP2.includes('只给手机看'), 'coreExclude 可显式指定标记');
+
+// 过滤发生在截断之前：过滤后长度应显著短于原始
+check(exChild.length < exPrimary.length, '过滤在 coreLimit 截断之前生效');
+rmSync(dirE, { recursive: true, force: true });
 
 
 rmSync(dir, { recursive: true, force: true });

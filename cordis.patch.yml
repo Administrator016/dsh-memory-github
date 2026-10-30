@@ -11,6 +11,9 @@
         role: primary             # primary（整理端）| child（子端，只读 + 写 inbox）
         readOnly: false           # true 强制只读；role=child 时自动为 true
         coreLimit: 3000           # 核心记忆注入上限（字符）
+        coreExclude: null         # 注入时丢弃含这些标记的行/节，如 ['【手机】']；
+                                  # null = 子端(role: child)自动用 ['【手机】']，主端不过滤
+                                  # 过滤发生在 coreLimit 截断之前
         remote: ''                # github 后端：git@github.com:you/dsh-memory.git
         branch: main
         autoPull: true            # 启动时拉取

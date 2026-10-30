@@ -96,6 +96,7 @@ them in your own patch layer):
     role: primary             # primary (writes) | child (read-only + inbox)
     readOnly: false           # true forces read-only; implied by role=child
     coreLimit: 3000           # max characters of core memory injected
+    coreExclude: null         # drop lines/sections containing these markers; null = child auto-uses ['【手机】']
     remote: ''                # github backend: git@github.com:you/dsh-memory.git
     branch: main
     autoPull: true            # pull on startup
