@@ -1,5 +1,12 @@
-# 发布：推 tag（v0.4.2 形式）自动发 npm，走 OIDC Trusted Publishing——不需要任何长期 token。
-# 一次性准备：npm 包页面 → Settings → Trusted Publishing → 绑定本仓库 + workflow 文件名 publish.yml
+# 发布：推 tag（v0.4.3 形式）自动发 npm。
+#
+# 认证方式两条，任选其一可用：
+#   1) OIDC Trusted Publishing（推荐，无长期 token）
+#      npm 包页面 → Settings → Trusted Publishing → 绑定本仓库 + workflow 文件名 publish.yml
+#   2) 仓库 secret `NPM_TOKEN`（备选，手机端也能只推 tag 就发布）
+#      GitHub 仓库 → Settings → Secrets and variables → Actions → New repository secret
+#      name: NPM_TOKEN   value: <npm granular token，需 Publish 权限>
+#   两条都配了也不冲突：OIDC 优先，token 兜底。
 name: publish
 
 on:
@@ -9,7 +16,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write      # OIDC 必需：用来换 npm 的短期发布凭据
+  id-token: write      # OIDC / provenance 需要；用 token 发布时保留也无害
 
 jobs:
   publish:
@@ -31,7 +38,7 @@ jobs:
             exit 1
           fi
 
-      - name: 升级 npm（Trusted Publishing 需要 npm 11.5+）
+      - name: 升级 npm
         run: |
           npm config set registry https://registry.npmjs.org
           npm install -g npm@latest
@@ -40,5 +47,27 @@ jobs:
       - name: 冒烟测试
         run: node test/smoke.mjs
 
-      - name: 发布（OIDC，无 token；带 provenance）
-        run: npm publish --provenance --access public --ignore-scripts
+      - name: 已发布过就跳过（手动发过 / 重跑 tag 时不报错）
+        id: guard
+        run: |
+          VER="$(node -p "require('./package.json').version")"
+          NAME="$(node -p "require('./package.json').name")"
+          if npm view "$NAME@$VER" version >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::$NAME@$VER 已在 npm 上，跳过发布"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 发布（优先 OIDC，缺省回退 NPM_TOKEN；带 provenance）
+        if: steps.guard.outputs.exists != 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          if [ -n "${NODE_AUTH_TOKEN}" ]; then
+            echo "::notice::使用 NPM_TOKEN 发布"
+            printf '//registry.npmjs.org/:_authToken=%s\n' "$NODE_AUTH_TOKEN" > "$HOME/.npmrc"
+          else
+            echo "::notice::未配置 NPM_TOKEN，尝试 OIDC Trusted Publishing"
+          fi
+          npm publish --provenance --access public --ignore-scripts
