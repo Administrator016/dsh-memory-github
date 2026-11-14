@@ -1,5 +1,19 @@
 # 更新日志
 
+## 0.4.3 — 2026-11-14
+
+**首个通过 OIDC Trusted Publishing 发布的版本**（用于验证 npm 上的可信发布配置；无功能变更）。
+
+### 变更
+
+- README「发布」章节改成实际生效的流程：日常 = 改版本 → 推 tag → CI 用 OIDC 发布并带 provenance；
+  手机端同样只需推 tag。补充 `NPM_TOKEN` 兜底与「已发布就跳过」的说明。
+- CI（`publish.yml`）：
+  - 认证优先 OIDC，缺省回退仓库 secret `NPM_TOKEN`
+  - 发布前先查 `npm view <pkg>@<ver>`，已存在则打 `::notice::` 跳过（手动发过/重跑 tag 不再报红）
+- 说明：0.4.1 / 0.4.2 是本地 `npm publish`（长期 token）发的，未走 CI；
+  0.4.3 起走 Trusted Publishing，配置生效后 token 只作为应急备用。
+
 ## 0.4.2 — 2026-11-14
 
 ### 新增

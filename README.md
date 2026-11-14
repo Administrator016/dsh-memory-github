@@ -279,15 +279,19 @@ updated: 2026-10-25T02:49:12.000Z
 ```sh
 # 1. 改 package.json 版本 + CHANGELOG
 # 2. 提交后打 tag（tag 必须与版本号一致，workflow 会校验）
-git tag v0.4.2 && git push origin v0.4.2
+git tag v0.4.3 && git push origin v0.4.3
 ```
 
-一次性准备（包的所有者做一次）：
-1. npm 包页面 → **Settings → Trusted Publishing** → 绑定：仓库 `Administrator016/dsh-memory-github`、workflow `publish.yml`、环境留空
-2. 之后每次推 tag，GitHub Actions 用 OIDC 换短期凭据发布，并附 **provenance** 证明
+一次性准备（包的所有者做一次，已完成）：
+1. npm 包页面 → **Settings → Trusted Publishing** → 绑定：仓库 `Administrator016/dsh-memory-github`、workflow `publish.yml`、环境留空，
+   勾选「允许 npm 发布」与「允许 npm dist-tag」
+2. 绑定后 npm 会要求**验证一次**（在截止时间前用该配置发布一个版本）；`0.4.3` 就是那次验证发布
+3. 之后每次推 tag，GitHub Actions 用 OIDC 换短期凭据发布，并附 **provenance** 证明
 
-> 没有绑定 Trusted Publishing 时，workflow 会在发布步骤失败（没有可用凭据）——这是预期行为，不会误发。
-> 备用方案：仓库 Secret 放 `NPM_TOKEN`，workflow 里用 `NODE_AUTH_TOKEN` 环境变量（但长期 token 泄露风险更高，不推荐）。
+**手机端也能发布**：手机只要能 `git push origin v0.4.3`，CI 就会替它发 npm，无需在手机上放 token。
+
+> 备用方案：仓库 Secret 放 `NPM_TOKEN`，workflow 会在没有 OIDC 时回退到它（长期 token 泄露风险更高，仅应急）。
+> workflow 发布前会先查 `npm view <pkg>@<ver>`，已发布则跳过，所以手动发过或重跑 tag 都不会报错。
 
 ## 开发
 
