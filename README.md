@@ -128,6 +128,46 @@ dsh plugin --profile desktop add link:/path/to/dsh-memory-github
 - 某个 `##` 节被过滤到只剩标题时，**标题一起丢掉**，不会留下空壳
 - 过滤在 `coreLimit` 截断**之前**，子端能用满额度
 
+## 技能优先：skill 还是 memory？
+
+两样东西都会占系统提示，但**职责不同，别混着写**：
+
+| | skill（`$DSH_HOME/skills/<name>/SKILL.md`） | memory（`notes/` + `MEMORY.md`） |
+|---|---|---|
+| 记什么 | **怎么做**：固定步骤、命令、检查清单、验收标准 | **是什么**：环境事实、约定、踩过的坑、用户偏好 |
+| 形态 | 操作手册，篇幅可以长，按需加载 | 短条目，每轮自动注入（或按需召回） |
+| 举例 | "改 ColorOS 便签：先停进程→改 SQLite→chcon→重启" | "这台机 git 必须走 ssh.github.com:443" |
+| 判定 | 下次遇到**同类任务**还能照着做 → 写 skill | 下次只要**知道这件事**就行 → 写 memory |
+
+经验值：**一条记忆反复被"照着操作"用超过两三次，就该升格成 skill**；
+skill 里发现"这台机器特有的事实"，摘成一条 memory 记下来。
+
+### 跨端携带技能（`skillsSync`）
+
+技能默认只在本机 `$DSH_HOME/skills` 里。要让别的设备也能看到，开启镜像：
+
+```yaml
+- id: dsh-memory-github
+  name: 'dsh-memory-github'
+  config:
+    backend: github
+    role: primary          # 只有整理端需要开
+    skillsSync: true
+    # skillsDir: ''        # 默认 $DSH_HOME/skills
+    # skillsTarget: ''     # 默认 <memory>/skills
+    # skillsSyncPush: true # 有变化时一起 commit + push
+```
+
+行为：
+
+- 启动时把 `skills/<name>/SKILL.md` 镜像成 `<memory>/skills/<name>.md`，并生成索引 `README.md`
+- **只镜像不改写**：技能目录是唯一真相源，备份目录手改无效
+- 逐字节比对，**没变化不写**（幂等，不会每次启动都产生空 commit）
+- 子端（`role: child`）会跳过并打日志 —— 只读端不写记忆库
+- 没有 `SKILL.md` 的目录跳过；源目录不存在只告警，不影响挂载
+
+换到新设备：把 `<memory>/skills/<name>.md` 放回 `skills/<name>/SKILL.md`（一个技能一个目录）即可。
+
 ## 多端分工与同步提醒
 
 一台机器当"整理端"，其余当"子端"：

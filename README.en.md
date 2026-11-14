@@ -115,6 +115,46 @@ them in your own patch layer):
     authorEmail: dsh-memory@localhost
 ```
 
+## Skills first: skill or memory?
+
+Both end up in the system prompt, but they answer different questions — do not mix them.
+
+| | skill (`$DSH_HOME/skills/<name>/SKILL.md`) | memory (`notes/` + `MEMORY.md`) |
+|---|---|---|
+| Stores | **How to do it**: fixed steps, commands, checklists, acceptance criteria | **What is true**: environment facts, conventions, pitfalls, user preferences |
+| Shape | a runbook, can be long, loaded on demand | short entries, injected every turn or recalled on demand |
+| Example | "Edit ColorOS notes: stop process → edit SQLite → chcon → restart" | "On this box git must go through ssh.github.com:443" |
+| Test | the next **similar task** would follow it again → skill | the next turn only needs to **know** it → memory |
+
+Rule of thumb: **a memory that keeps getting executed as instructions two or three times should be promoted to a skill**;
+a machine-specific fact discovered inside a skill should be extracted into a memory entry.
+
+### Carrying skills across devices (`skillsSync`)
+
+Skills live only in the local `$DSH_HOME/skills` by default. To expose them to other devices, enable the mirror:
+
+```yaml
+- id: dsh-memory-github
+  name: 'dsh-memory-github'
+  config:
+    backend: github
+    role: primary          # only the primary side needs this
+    skillsSync: true
+    # skillsDir: ''        # default $DSH_HOME/skills
+    # skillsTarget: ''     # default <memory>/skills
+    # skillsSyncPush: true # commit + push together with the backup
+```
+
+Behaviour:
+
+- Mirrors `skills/<name>/SKILL.md` into `<memory>/skills/<name>.md` on startup and regenerates an index `README.md`
+- **Mirror only, never rewrites**: the skills directory stays the single source of truth
+- Byte-for-byte comparison, so **unchanged files are not written** (idempotent, no empty commits)
+- Skips on `role: child` (read-only) with a log line
+- Directories without `SKILL.md` are skipped; a missing source directory only warns and never blocks mounting
+
+On a new device, copy `<memory>/skills/<name>.md` back to `skills/<name>/SKILL.md` (one directory per skill).
+
 ## Multi-device roles and reminders
 
 | | `role: primary` | `role: child` |

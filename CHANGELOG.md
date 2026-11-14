@@ -1,5 +1,22 @@
 # 更新日志
 
+## 0.4.2 — 2026-11-14
+
+### 新增
+
+- **`skillsSync`：技能备份（默认关）**。启动时把 `$DSH_HOME/skills/<name>/SKILL.md`
+  镜像到记忆库的 `<memory>/skills/<name>.md`，并生成一份 `README.md` 索引表（技能名 + description）。
+  - 只做镜像、不解析改写：**技能目录是唯一真相源**，备份目录手改无效
+  - 内容逐字节比对，**没变化不写文件**（幂等，不会每轮启动都产生 commit）
+  - 没有 `SKILL.md` 的目录自动跳过；源目录不存在只告警、不影响插件挂载
+  - 仅 `primary` 端生效；`role: child`（只读）会跳过并打日志
+  - 相关字段：`skillsSync`（开关）、`skillsDir`（源，默认 `$DSH_HOME/skills`）、
+    `skillsTarget`（目标，默认 `<memory>/skills`）、`skillsSyncPush`（默认开，随同步一起 commit+push）
+- **README 新增「技能优先」章节**：skill 与 memory 的分工判定、该写哪一种、同步路径怎么走。
+- `cordis.patch.yml` 补上新字段注释，并注明子端会跳过技能备份。
+- 测试：新增 `test/skills-sync.mjs`（12 条：镜像、逐字节一致、README 索引与竖线转义、幂等、子端跳过、源目录缺失不崩），
+  冒烟测试 75 条全部保持通过。
+
 ## 0.4.1 — 2026-10-30
 
 ### 新增
