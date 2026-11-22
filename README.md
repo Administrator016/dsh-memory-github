@@ -194,8 +194,8 @@ skill 里发现"这台机器特有的事实"，摘成一条 memory 记下来。
 
 | 工具 | 作用 |
 |---|---|
-| `memory_write` | 保存一条归档记忆（title / content / tags），立刻进索引；写入前会做**相似度查重** |
-| `memory_update` | 改已有归档的 title / tags / content，刷新 `updated` |
+| `memory_write` | 保存一条归档记忆（title / content / tags / **related** / **isolatedReason** / **supersedes**），立刻进索引；写入前会做**相似度查重** |
+| `memory_update` | 改已有归档的 title / tags / content / related / isolatedReason / supersedes，刷新 `updated` |
 | `memory_forget` | `archive`（移到 `notes/archive/` 可回滚）或 `delete` |
 | `memory_core` | 编辑 `MEMORY.md`：`append` / `replace` / `remove` 某个分节 |
 | `memory_search` | 按关键词检索（标题权重 6、标签 3、正文按出现次数），返回摘要 |

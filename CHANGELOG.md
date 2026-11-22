@@ -1,5 +1,25 @@
 # 更新日志
 
+## 0.4.4 — 2026-11-22
+
+**写入即可挂链、可声明孤立、可声明「取代」**（此前这些字段只能事后手改 front-matter，反复被 lint 拦）。
+
+### 新增
+
+- `memory_write` 三个可选参数：
+  - `related: string[]` — 直接写 `related:`，传完整 id（不再手补）
+  - `isolatedReason: string` — 写 `isolated: true` + `isolated_reason:`
+  - `supersedes: string` — 声明本条取代哪条旧笔记；旧笔记自动打上 `superseded_by:`、
+    补 `related:` 指向新笔记、并移入 `notes/archive/`
+- `memory_update` 同样支持这三个参数（`isolatedReason: ""` 表示清除孤立声明）
+- `memory_stats` 增加演化计数：本端取代过 N 条 / 被取代（已归档）N 条
+- 索引条目新增 `related / isolated / supersedes / supersededBy` 字段
+
+### 测试
+
+- 新增 `test/supersede.mjs`（3 个用例：写入时取代、孤立声明、更新时取代）
+- `node test/smoke.mjs` 仍 75 项全通过
+
 ## 0.4.3 — 2026-11-14
 
 **首个通过 OIDC Trusted Publishing 发布的版本**（用于验证 npm 上的可信发布配置；无功能变更）。
