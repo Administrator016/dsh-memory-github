@@ -71,3 +71,15 @@ jobs:
             echo "::notice::未配置 NPM_TOKEN，尝试 OIDC Trusted Publishing"
           fi
           npm publish --provenance --access public --ignore-scripts
+
+      - name: 核验发布结果（npm 上必须能查到）
+        run: |
+          VER="$(node -p \"require(\x27./package.json\x27).version\")"
+          NAME="$(node -p \"require(\x27./package.json\x27).name\")"
+          for i in 1 2 3 4 5; do
+            if npm view "$NAME@$VER" version >/dev/null 2>&1; then
+              echo "::notice::$NAME@$VER 已上架"; exit 0
+            fi
+            echo "第 $i 次查不到，等 15s…"; sleep 15
+          done
+          echo "::error::$NAME@$VER 发布后仍查不到，判定失败"; exit 1
