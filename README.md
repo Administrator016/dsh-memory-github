@@ -205,6 +205,9 @@ skill 里发现"这台机器特有的事实"，摘成一条 memory 记下来。
 | `memory_history` | 提交历史（GitHub 后端），追溯某条记忆是何时被哪个工具写进来的 |
 | `memory_sync` | `status` / `pull` / `push`，GitHub 后端专用 |
 
+**inbox 提醒**：可写端每轮会在系统提示里看到 `inbox/` 的待整理清单（本地文件 + 远端差异，
+`git fetch` 默认 5 分钟一次，可用 `DSH_INBOX_FETCH_TTL_SEC` 调整）。只读子端不显示。
+
 **查重**：`memory_write` 会把新内容与已有归档做词袋相似度比较（Jaccard ≥ 45% 视为高度相似），
 命中时在返回里提示「考虑改用 `memory_update`」。关掉：`dedupeHint: false`。
 

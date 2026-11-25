@@ -1,5 +1,22 @@
 # 更新日志
 
+## 0.4.6 — 2026-11-25
+
+**整理端不再漏看 inbox**：电脑/便携端往 `inbox/` 写留言后，手机（可写端）会在系统提示里看到待整理清单。
+
+### 新增
+
+- 新的系统提示小节 `dsh-memory-github:inbox`（order 66，**只在可写端注册**，只读子端不需要）：
+  - 本地 `inbox/*.md`（排除 `done/` 与 README）→ 列出文件名与条数
+  - 远端有、本地还没拉的（`git diff HEAD..origin/main -- inbox/`）→ 提示先 pull
+  - 每次生成提示时检查；`git fetch` 默认 **5 分钟最多一次**（`DSH_INBOX_FETCH_TTL_SEC` 可调），失败静默跳过
+- 成本：本地 readdir 几乎免费，不调用模型、不烧 token；整理完（文件移进 `inbox/done/`）提醒自动消失
+
+### 测试
+
+- 新增 `test/inbox-nudge.mjs`（3 用例：有留言→注入、done/README 不算、只读端不注册）
+- `test/smoke.mjs` 75 项、`test/supersede.mjs` 3 项均通过
+
 ## 0.4.5 — 2026-11-22
 
 内容同 0.4.4（0.4.4 的 tag 推上去了，但 CI 显示成功而 npm 上没有 → 补了一步「发布后核验」，用 0.4.5 重发）。
